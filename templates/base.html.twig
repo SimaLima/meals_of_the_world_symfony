@@ -2,18 +2,41 @@
 <html>
     <head>
         <meta charset="UTF-8">
-        <title>{% block title %}Welcome!{% endblock %}</title>
-        {# Run `composer require symfony/webpack-encore-bundle`
-           and uncomment the following Encore helpers to start using Symfony UX #}
-        {% block stylesheets %}
-            {#{{ encore_entry_link_tags('app') }}#}
-        {% endblock %}
-
-        {% block javascripts %}
-            {#{{ encore_entry_script_tags('app') }}#}
-        {% endblock %}
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>{% block title %}JelaSvijeta!{% endblock %}</title>
+        <style>
+            /* NORMALIZE */
+            *, *:before, *:after {box-sizing: border-box;}
+            body {margin: 0; padding: 0; background-color: #eef1f8; color: #444; font-size: 16px; font-family: Arial, sans-serif;}
+            ul {margin: 0; padding: 0;}
+            ul li {list-style: none;}
+            /* LAYOUT */
+            .main-wrapper {max-width: 100%; width: 100%;}
+            .inner-wrapper {max-width: 1100px; width: 100%; height: 100%; margin: 0 auto; position: relative;}
+            /* HEADER */
+            .site-header {height: 50px; background-color: #444; color: #fff;}
+            .site-header .site-navigation ul {width: 100%; height: 100%;}
+            .site-header .site-navigation ul li {display: inline-block; height: 50px; line-height: 50px; font-size: 19px;}
+            /* MAIN */
+            .site-content {display: flex; height: 100%; min-height: calc(100vh - 170px);}
+            /* FOOTER */
+            .site-footer {height: 120px; background-color: #444; color: #fff;}
+            .footer-content {display: flex; align-items: center; justify-content: center;}
+        </style>
     </head>
-    <body>
-        {% block body %}{% endblock %}
+    <body class="site-area">
+        <header id="site-header" class="site-header main-wrapper">
+            <nav id="site-navigation" class="site-navigation inner-wrapper">
+                <ul class="list-group">
+                    <li class="list-item">JelaSvijeta</li>
+                </ul>
+            </nav>
+        </header>
+        <main id="site-content" class="site-content main-wrapper">
+            {% block body %}{% endblock %}
+        </main>
+        <footer id="site-footer" class="site-footer main-wrapper">
+            <div class="footer-content inner-wrapper">Copyright &copy; {{ 'now'|date("Y") }}</div>
+        </footer>
     </body>
 </html>

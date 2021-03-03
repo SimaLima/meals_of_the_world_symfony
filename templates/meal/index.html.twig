@@ -1,0 +1,24 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+<style>
+    /* page layout */
+    .site-content .page-content {height: auto; display: flex; justify-content: space-between; padding-top: 20px; padding-bottom: 20px;}
+    .site-content .page-content .primary-container {width: calc(100% - 220px); background-color: #fff; order: 2; padding: 20px;}
+    .site-content .page-content .primary-container h1 {margin: 0 0 15px 0; font-size: 24px;}
+    .site-content .page-content .secondary-container {width: 200px; background-color: #fff; order: 1; padding: 20px;}
+    .site-content .page-content .secondary-container h2 {margin: 0 0 15px 0; font-size: 21px;}
+</style>
+<div class="page-content inner-wrapper">
+    <section class="primary-container">
+        <h1>Response:</h1>
+        <div class="response-holder">
+            <pre>json{}</pre>
+        </div>
+    </section>
+    <aside class="secondary-container">
+        <h2>Filters:</h2>
+        {#{{ form(form) }}#}
+    </aside>
+</div>
+{% endblock %}
