@@ -3,22 +3,48 @@
 {% block body %}
 <style>
     /* page layout */
-    .site-content .page-content {height: auto; display: flex; justify-content: space-between; padding-top: 20px; padding-bottom: 20px;}
-    .site-content .page-content .primary-container {width: calc(100% - 220px); background-color: #fff; order: 2; padding: 20px;}
+    .site-content .page-content {display: flex; justify-content: space-between; padding-top: 20px; padding-bottom: 20px;}
+    .site-content .page-content .primary-container {width: calc(100% - 220px); background-color: #fff; order: 2; padding: 20px; border-radius: 3px;}
     .site-content .page-content .primary-container h1 {margin: 0 0 15px 0; font-size: 24px;}
-    .site-content .page-content .secondary-container {width: 200px; background-color: #fff; order: 1; padding: 20px;}
-    .site-content .page-content .secondary-container h2 {margin: 0 0 15px 0; font-size: 21px;}
+    .site-content .page-content .secondary-container {width: 200px; height: 100%; background-color: #fff; order: 1;  border-radius: 3px;}
+    .site-content .page-content .secondary-container h2 {margin: 0 0 0px 0; font-size: 21px; padding: 20px 20px; border-bottom: 1px solid #444;}
+    /* form styles */
+    .secondary-container>.form-container {font-size: 15px; padding: 20px;}
+    .secondary-container>.form-container>div>div {margin-bottom: 15px;}
+    .secondary-container>.form-container label {display: block; margin-bottom: 5px; font-weight: bold;}
+    .secondary-container>.form-container input,
+    .secondary-container>.form-container select,
+    .secondary-container>.form-container textarea {border: 1px solid #dbe1f0; border-radius: 3px; color: #444; font-size: 14px;}
+    /* input type-number */
+    .secondary-container>.form-container .input-type {display: flex; justify-content: space-between; height: 27px; align-items: center;}
+    .secondary-container>.form-container .input-type>label {margin-bottom: 0;}
+    .secondary-container>.form-container .input-type>input {height: 100%; width: 75px;}
+    /* select */
+    .secondary-container>.form-container .select-type>select {height: 27px; width: 100%;}
+    /* multiselect */
+    .secondary-container>.form-container .multiselect-type>select {width: 100%; min-height: 75px;}
+    /* date-type */
+    .secondary-container>.form-container .date-type {}
+    /* submit */
+    .secondary-container>.form-container .submit-type {margin-top: 40px; margin-bottom: 0;}
+    .secondary-container>.form-container .submit-type>button {width: 80px; height: 32px; background-color: #444; color: #fff; border: 1px solid transparent; border-radius: 3px; cursor: pointer; text-align: center;}
 </style>
 <div class="page-content inner-wrapper">
     <section class="primary-container">
         <h1>Response:</h1>
-        <div class="response-holder">
-            <pre>json{}</pre>
-        </div>
+        <div class="response-holder"><pre>json{}</pre></div>
     </section>
     <aside class="secondary-container">
         <h2>Filters:</h2>
-        {#{{ form(form) }}#}
+        {{ form_start(form,
+            {
+                'attr': {'id': 'filter-meals-form', 'class': 'form-container'},
+                'method': 'GET',
+                'action': path('meal.index'),
+            })
+        }}
+            {{ form_widget(form) }}
+        {{ form_end(form) }}
     </aside>
 </div>
 {% endblock %}

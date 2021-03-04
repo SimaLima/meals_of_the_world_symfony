@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\MealRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Gedmo\Mapping\Annotation as Gedmo;
 use DateTime;
@@ -27,7 +29,7 @@ class Meal
     private $slug;
 
     /**
-     * @ORM\OneToOne(targetEntity=Category::class, cascade={"persist", "remove"})
+     * @ORM\ManyToOne(targetEntity=Category::class, inversedBy="meal")
      */
     private $category;
 
@@ -56,14 +58,33 @@ class Meal
     private $updatedAt;
 
     /**
-     * @ORM\Column(name="deletedAt", type="datetime", nullable=true)
+     * @ORM\Column(name="deleted_at", type="datetime", nullable=true)
      */
     private $deletedAt;
+
+    /**
+     * @ORM\ManyToMany(targetEntity=Ingredient::class, inversedBy="meal")
+     * @ORM\JoinTable(name="meal_ingredient")
+     */
+    private $ingredient;
+
+    /**
+     * @ORM\ManyToMany(targetEntity=Tag::class, inversedBy="meal")
+     * @ORM\JoinTable(name="meal_tag")
+     */
+    private $tag;
 
     /**
      * @Gedmo\Locale
      */
     private $locale;
+
+
+    public function __construct()
+    {
+        $this->ingredient = new ArrayCollection();
+        $this->tag = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -118,19 +139,6 @@ class Meal
         return $this;
     }
 
-    /**
-     * @ORM\PrePersist
-     * @ORM\PreUpdate
-     */
-    public function updatedTimestamps(): void
-    {
-        // $dateTimeNow = new DateTime('now');
-        // $this->setUpdatedAt($dateTimeNow);
-        // if ($this->getCreatedAt() === null) {
-        //     $this->setCreatedAt($dateTimeNow);
-        // }
-    }
-
     public function getCreatedAt(): ?\DateTimeInterface
     {
         return $this->createdAt;
@@ -167,8 +175,61 @@ class Meal
         return $this;
     }
 
+    /**
+     * @return Collection|Ingredient[]
+     */
+    public function getIngredient(): Collection
+    {
+        return $this->ingredient;
+    }
+
+    public function addIngredient(Ingredient $ingredient): self
+    {
+        if (!$this->ingredient->contains($ingredient)) {
+            $this->ingredient[] = $ingredient;
+        }
+
+        return $this;
+    }
+
+    public function removeIngredient(Ingredient $ingredient): self
+    {
+        if ($this->ingredient->contains($ingredient)) {
+            $this->ingredient->removeElement($ingredient);
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection|Tag[]
+     */
+    public function getTag(): Collection
+    {
+        return $this->tag;
+    }
+
+    public function addTag(Tag $tag): self
+    {
+        if (!$this->tag->contains($tag)) {
+            $this->tag[] = $tag;
+        }
+
+        return $this;
+    }
+
+    public function removeTag(Tag $tag): self
+    {
+        if ($this->tag->contains($tag)) {
+            $this->tag->removeElement($tag);
+        }
+
+        return $this;
+    }
+
     public function setTranslatableLocale($locale)
     {
         $this->locale = $locale;
     }
+
 }

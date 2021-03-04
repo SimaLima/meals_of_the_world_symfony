@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\TagRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Gedmo\Mapping\Annotation as Gedmo;
 
@@ -30,9 +32,19 @@ class Tag
     private $title;
 
     /**
+     * @ORM\ManyToMany(targetEntity=Meal::class, mappedBy="tag")
+     */
+    private $meal;
+
+    /**
      * @Gedmo\Locale
      */
     private $locale;
+
+    public function __construct()
+    {
+        $this->meal = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -59,6 +71,34 @@ class Tag
     public function setTitle(string $title): self
     {
         $this->title = $title;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection|Meal[]
+     */
+    public function getMeal(): Collection
+    {
+        return $this->meal;
+    }
+
+    public function addMeal(Meals $meal): self
+    {
+        if (!$this->meal->contains($meal)) {
+            $this->meal[] = $meal;
+            $meal->addTag($this);
+        }
+
+        return $this;
+    }
+
+    public function removeMeal(Meals $meal): self
+    {
+        if ($this->meal->contains($meal)) {
+            $this->meal->removeElement($meal);
+            $meal->removeTag($this);
+        }
 
         return $this;
     }

@@ -11,8 +11,7 @@ use App\Entity\Tag;
 use App\Entity\Meal;
 use App\Entity\Category;
 use App\Entity\Ingredient;
-
-
+use App\Form\FilterMealsType;
 
 /**
  * @Route("/meal", name="meal.")
@@ -22,11 +21,23 @@ class MealController extends AbstractController
     /**
      * @Route("/", name="index")
      */
-    public function index(): Response
+    public function index(Request $request): Response
     {
+        // $some_data = $request->query->get('filter_meals');
+        // dump($some_data['category']);
+        // $data['lang']->getLocale()
+
+        $form = $this->createForm(FilterMealsType::class);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $data = $form->getData();
+            dump($data);
+            // return $this->redirectToRoute('index');
+        }
+
         return $this->render('meal/index.html.twig', [
-            // 'form' => $form->createView(),
-            // 'post' => $posts
+            'form' => $form->createView()
         ]);
     }
 

@@ -8,6 +8,7 @@ use App\Entity\Meal;
 use App\Entity\Ingredient;
 use App\Entity\Tag;
 use App\Entity\Category;
+use App\Entity\Language;
 use Gedmo\Mapping\Annotation as Gedmo;
 use Gedmo\Translatable\Translatable;
 
@@ -18,10 +19,29 @@ class AppFixtures extends Fixture
     public function load(ObjectManager $manager)
     {
         $this->repository = $manager->getRepository('Gedmo\\Translatable\\Entity\\Translation');
+        $this->loadLanguages($manager);
         $this->loadTags($manager);
         $this->loadIngredients($manager);
         $this->loadCategories($manager);
         $this->loadMeals($manager);
+    }
+
+    private function loadLanguages(ObjectManager $manager): void
+    {
+        $languages = [
+            ['locale' => 'en_US', 'title' => 'English'],
+            ['locale' => 'hr_HR', 'title' => 'Croatian'],
+            ['locale' => 'de_DE', 'title' => 'German'],
+            ['locale' => 'fr_FR', 'title' => 'French'],
+        ];
+
+        foreach ($languages as $key => $value) {
+            $language = new Language();
+            $language->setLocale($value['locale']);
+            $language->setTitle($value['title']);
+            $manager->persist($language);
+        }
+        $manager->flush();
     }
 
     private function loadTags(ObjectManager $manager): void
@@ -79,11 +99,27 @@ class AppFixtures extends Fixture
             $meal->setTitle('Meal title '.$i.' (en)');
             $meal->setDescription('This is meal description '.$i.'. (en)');
             $meal->setSlug('meal-'.$i);
-            $meal->setCategory(
-                $manager->merge(
-                    $this->getReference('category-2')
-                )
-            );
+            if ($i%6 == 0) $meal->setDeletedAt(new \DateTime('now+5 days'));
+            if ($i%5 != 0) $meal->setCategory($manager->merge($this->getReference('category-'.mt_rand(1,5))));
+
+            // meal-tags
+            for ($j=1; $j<=mt_rand(1,10); $j++) {
+                $meal->addTag(
+                    $manager->merge(
+                        $this->getReference('tag-'.mt_rand(1,10))
+                    )
+                );
+            }
+
+            // meal-ingredients
+            for ($k=1; $k<=mt_rand(1,10); $k++) {
+                $meal->addIngredient(
+                    $manager->merge(
+                        $this->getReference('ingredient-'.mt_rand(1,10))
+                    )
+                );
+            }
+
             $this->repository
                     ->translate($meal, 'title', 'hr_HR', 'Naslov jela '.$i.' (hr)')
                     ->translate($meal, 'description', 'hr_HR', 'Ovo je opis jela '.$i.'. (hr)')
