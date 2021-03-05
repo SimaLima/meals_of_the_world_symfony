@@ -12,32 +12,34 @@ use App\Entity\Meal;
 use App\Entity\Category;
 use App\Entity\Ingredient;
 use App\Form\FilterMealsType;
+use App\Repository\MealRepository;
 
 /**
- * @Route("/meal", name="meal.")
+ * @Route("/", name="meal.")
  */
 class MealController extends AbstractController
 {
     /**
      * @Route("/", name="index")
      */
-    public function index(Request $request): Response
+    public function index(Request $request, MealRepository $mealRepository): Response
     {
-        // $some_data = $request->query->get('filter_meals');
-        // dump($some_data['category']);
-        // $data['lang']->getLocale()
-
+        $response = '';
         $form = $this->createForm(FilterMealsType::class);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
             $data = $form->getData();
-            dump($data);
-            // return $this->redirectToRoute('index');
+            $results = $mealRepository->filter($data)
+                                      ->getQuery()
+                                      ->getResult();
+
+            dump($results);
         }
 
         return $this->render('meal/index.html.twig', [
-            'form' => $form->createView()
+            'form' => $form->createView(),
+            'response' => $response
         ]);
     }
 

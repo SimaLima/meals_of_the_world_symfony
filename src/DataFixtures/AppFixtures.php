@@ -48,12 +48,12 @@ class AppFixtures extends Fixture
     {
         for ($i=1; $i<=10; $i++) {
             $tag = new Tag();
-            $tag->setTitle('Tag title '.$i.' (en)');
+            $tag->setTitle('Tag '.$i.' (en)');
             $tag->setSlug('tag-'.$i);
             $this->repository
-                    ->translate($tag, 'title', 'hr_HR', 'Oznaka naslov '.$i.' (hr)')
-                    ->translate($tag, 'title', 'de_DE', 'Etikett titel '.$i.' (de)')
-                    ->translate($tag, 'title', 'fr_FR', 'Etiqueter titre '.$i.' (fr)');
+                    ->translate($tag, 'title', 'hr_HR', 'Oznaka '.$i.' (hr)')
+                    ->translate($tag, 'title', 'de_DE', 'Etikett '.$i.' (de)')
+                    ->translate($tag, 'title', 'fr_FR', 'Etiqueter '.$i.' (fr)');
             $manager->persist($tag);
             $this->addReference('tag-'.$i, $tag);
         }
@@ -64,12 +64,12 @@ class AppFixtures extends Fixture
     {
         for ($i=1; $i <= 10; $i++) {
             $ingredient = new Ingredient();
-            $ingredient->setTitle('Ingredient title '.$i.' (en)');
+            $ingredient->setTitle('Ingredient '.$i.' (en)');
             $ingredient->setSlug('ingredient-'.$i);
             $this->repository
-                    ->translate($ingredient, 'title', 'hr_HR', 'Sastojak naslov '.$i.' (hr)')
-                    ->translate($ingredient, 'title', 'de_DE', 'Zutat titel '.$i.' (de)')
-                    ->translate($ingredient, 'title', 'fr_FR', 'Ingredient titre '.$i.' (fr)');
+                    ->translate($ingredient, 'title', 'hr_HR', 'Sastojak '.$i.' (hr)')
+                    ->translate($ingredient, 'title', 'de_DE', 'Zutat '.$i.' (de)')
+                    ->translate($ingredient, 'title', 'fr_FR', 'Ingredient '.$i.' (fr)');
             $manager->persist($ingredient);
             $this->addReference('ingredient-'.$i, $ingredient);
         }
@@ -80,12 +80,12 @@ class AppFixtures extends Fixture
     {
         for ($i=1; $i <= 5; $i++) {
             $category = new Category();
-            $category->setTitle('Category title '.$i.' (en)');
+            $category->setTitle('Category '.$i.' (en)');
             $category->setSlug('category-'.$i);
             $this->repository
-                    ->translate($category, 'title', 'hr_HR', 'Kategorija naslov '.$i.' (hr)')
-                    ->translate($category, 'title', 'de_DE', 'Kategorie titel '.$i.' (de)')
-                    ->translate($category, 'title', 'fr_FR', 'Categorie titre '.$i.' (fr)');
+                    ->translate($category, 'title', 'hr_HR', 'Kategorija '.$i.' (hr)')
+                    ->translate($category, 'title', 'de_DE', 'Kategorie '.$i.' (de)')
+                    ->translate($category, 'title', 'fr_FR', 'Categorie '.$i.' (fr)');
             $manager->persist($category);
             $this->addReference('category-'.$i, $category);
         }
@@ -99,8 +99,22 @@ class AppFixtures extends Fixture
             $meal->setTitle('Meal title '.$i.' (en)');
             $meal->setDescription('This is meal description '.$i.'. (en)');
             $meal->setSlug('meal-'.$i);
-            if ($i%6 == 0) $meal->setDeletedAt(new \DateTime('now+5 days'));
             if ($i%5 != 0) $meal->setCategory($manager->merge($this->getReference('category-'.mt_rand(1,5))));
+
+            // 21,20,19,18...
+            $days = 22-$i;
+            $created_at = new \DateTime('now-'.$days.' days');
+            $updated_at = $created_at;
+            $deleted_at = null;
+
+            // every 5th meal is updated 2 days after creation
+            if ($i%5 == 0) $updated_at = new \DateTime('now-'.($days-2).' days');
+            // every 6th meal is deleted 2 days after creation
+            if ($i%6 == 0) $deleted_at = new \DateTime('now-'.($days-2).' days');
+
+            $meal->setCreatedAt($created_at);
+            $meal->setUpdatedAt($updated_at);
+            $meal->setDeletedAt($deleted_at);
 
             // meal-tags
             for ($j=1; $j<=mt_rand(1,10); $j++) {

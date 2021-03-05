@@ -3,35 +3,37 @@
 namespace App\Form;
 
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\FormBuilderInterface;
+use Symfony\Component\Form\FormEvent;
+use Symfony\Component\Form\FormEvents;
+// use Symfony\Component\Form\FormView;
+// use Symfony\Component\Form\FormInterface;
+// use Symfony\Component\Form\ChoiceList\View\ChoiceView;
+use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Form\Extension\Core\Type\DateType;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
-use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\IntegerType;
-
 use Symfony\Component\Validator\Constraints\Range;
 use Symfony\Component\Validator\Constraints\Choice;
-use Symfony\Component\Validator\Constraints\DateTime;
-
-use Symfony\Component\Form\FormBuilderInterface;
-use Symfony\Component\OptionsResolver\OptionsResolver;
-use App\Entity\Category;
 use App\Entity\Tag;
 use App\Entity\Language;
-use Symfony\Bridge\Doctrine\Form\Type\EntityType;
+use App\Repository\CategoryRepository;
 use Doctrine\ORM\EntityManagerInterface;
-
-
+use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 
 
 class FilterMealsType extends AbstractType
 {
-    private $entityManager;
+    private $em;
+    private $categoryRep;
+    private $language;
 
-    public function __construct(EntityManagerInterface $entityManager){
-        $this->entityManager = $entityManager;
+    public function __construct(EntityManagerInterface $entityManager, CategoryRepository $categoryRepository)
+    {
+        $this->em = $entityManager;
+        $this->categoryRep = $categoryRepository;
     }
-
 
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
@@ -55,7 +57,14 @@ class FilterMealsType extends AbstractType
                 'label' => 'Category:',
                 'row_attr' => ['class' => 'select-type category-select'],
                 'choices' => $this->getCategoryOptions(),
-                'constraints' => [new Range(['min'=> -1, 'max' => 20,])],
+                'choice_label' => function($category) {
+                    if ($category == 'null') return 'null';
+                    if ($category == '!null') return '!null';
+                    $category = $this->categoryRep->find($category);
+                    $category->setTranslatableLocale($this->language);
+                    $this->em->refresh($category);
+                    return $category->getTitle();
+                },
             ])
             ->add('with', ChoiceType::class, [
                 'required' => false,
@@ -78,8 +87,11 @@ class FilterMealsType extends AbstractType
                 'row_attr' => ['class' => 'multiselect-type tag-options'],
                 'multiple' => true,
                 'class' => Tag::class,
-                'choice_label' => 'title',
-                // 'constraints' => '',
+                'choice_label' => function($tag) {
+                    $tag->setTranslatableLocale($this->language);
+                    $this->em->refresh($tag);
+                    return $tag->getTitle();
+                },
             ])
             ->add('lang', EntityType::class, [
                 'required' => true,
@@ -87,42 +99,40 @@ class FilterMealsType extends AbstractType
                 'row_attr' => ['class' => 'select-type language-select'],
                 'class' => Language::class,
                 'choice_label' => 'title',
-                // 'constraints' => '',
             ])
             ->add('diff_time', DateType::class, [
                 'required' => false,
                 'label' => 'Select date:',
                 'row_attr' => ['class' => 'date-type date-picker'],
                 'widget' => 'single_text',
-                // 'constraints' => '',
             ])
             ->add('submit', SubmitType::class, [
                 'label' => 'Filter',
                 'row_attr' => ['class' => 'submit-type submit-button'],
             ])
             ->setMethod('GET')
+            ->addEventListener(FormEvents::SUBMIT, function (FormEvent $event) {
+                $data = $event->getData();
+                $this->language = (isset($data['lang'])) ? $data['lang']->getLocale() : 'en_US';
+            })
         ;
     }
 
-    protected function getCategoryOptions()
+    public function getCategoryOptions()
     {
-        // add "null" and "!null" options to categories
         $options = [];
-        $category_results = $this->entityManager->getRepository(Category::class)->findAll();
-
-        foreach ($category_results as $category) {
+        $categories = $this->categoryRep->findAll();
+        foreach ($categories as $category) {
             $options[$category->getTitle()] = $category->getId();
         }
-
-        $options['null'] = 0;
-        $options['!null'] = -1;
+        $options['null'] = 'null';
+        $options['!null'] = '!null';
         return $options;
     }
 
     public function configureOptions(OptionsResolver $resolver)
     {
         $resolver->setDefaults([
-            // Configure your form options here
         ]);
     }
 }
