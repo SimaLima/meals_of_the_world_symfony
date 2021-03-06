@@ -5,9 +5,11 @@ namespace App\Entity;
 use App\Repository\MealRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Doctrine\Common\Collections\Criteria;
 use Doctrine\ORM\Mapping as ORM;
 use Gedmo\Mapping\Annotation as Gedmo;
 use DateTime;
+
 
 /**
  * @ORM\Entity(repositoryClass=MealRepository::class)
@@ -103,7 +105,7 @@ class Meal
         return $this;
     }
 
-    public function getCategory(): ?Category
+    public function getCategory()
     {
         return $this->category;
     }

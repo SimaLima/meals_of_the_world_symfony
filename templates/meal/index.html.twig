@@ -4,7 +4,7 @@
 <style>
     /* page layout */
     .site-content .page-content {display: flex; justify-content: space-between; padding-top: 20px; padding-bottom: 20px;}
-    .site-content .page-content .primary-container {width: calc(100% - 220px); background-color: #fff; order: 2; padding: 20px; border-radius: 3px;}
+    .site-content .page-content .primary-container {width: calc(100% - 220px); overflow-x: scroll; background-color: #fff; order: 2; padding: 20px; border-radius: 3px;}
     .site-content .page-content .primary-container h1 {margin: 0 0 15px 0; font-size: 24px;}
     .site-content .page-content .secondary-container {width: 200px; height: 100%; background-color: #fff; order: 1;  border-radius: 3px;}
     .site-content .page-content .secondary-container h2 {margin: 0 0 0px 0; font-size: 21px; padding: 20px 20px; border-bottom: 1px solid #444;}
@@ -32,7 +32,8 @@
 <div class="page-content inner-wrapper">
     <section class="primary-container">
         <h1>Response:</h1>
-        <div class="response-holder"><pre>{{ response }}</pre></div>
+        <div class="response-holder"><pre>{{ dump(response) }}</pre></div>
+        <div class="response-holder"><pre>{{ response|json_encode(constant('JSON_PRETTY_PRINT')) }}</pre></div>
     </section>
     <aside class="secondary-container">
         <h2>Filters:</h2>

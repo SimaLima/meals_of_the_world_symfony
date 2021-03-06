@@ -83,7 +83,7 @@ class Tag
         return $this->meal;
     }
 
-    public function addMeal(Meals $meal): self
+    public function addMeal(Meal $meal): self
     {
         if (!$this->meal->contains($meal)) {
             $this->meal[] = $meal;
@@ -93,7 +93,7 @@ class Tag
         return $this;
     }
 
-    public function removeMeal(Meals $meal): self
+    public function removeMeal(Meal $meal): self
     {
         if ($this->meal->contains($meal)) {
             $this->meal->removeElement($meal);
