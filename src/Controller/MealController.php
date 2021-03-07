@@ -14,6 +14,10 @@ use App\Entity\Category;
 use App\Entity\Ingredient;
 use App\Form\FilterMealsType;
 use App\Repository\MealRepository;
+// use App\Repository\LanguageRepository;
+use App\Pagination\Paginator;
+
+use Knp\Component\Pager\PaginatorInterface;
 
 use Doctrine\ORM\QueryBuilder as DoctrineQueryBuilder;
 use Doctrine\ORM\Tools\Pagination\CountWalker;
@@ -32,7 +36,7 @@ class MealController extends AbstractController
     /**
      * @Route("/", name="index")
      */
-    public function index(Request $request, MealRepository $mealRepository): Response
+    public function index(Request $request, MealRepository $mealRepository, PaginatorInterface $paginator): Response
     {
         // $meta = ['currentPage' => '', 'totalItems' => '', 'itemsPerPage' => '', 'totalPages' => ''];
         // $links = ['first' => '', 'last' => '', 'prev' => '', 'next' => '', 'self' => ''];
@@ -44,10 +48,10 @@ class MealController extends AbstractController
 
         if ($form->isSubmitted() && $form->isValid()) {
             $data = $form->getData();
-            $data = $mealRepository->filter($data);
+            $data = $mealRepository->filter($data, $request);
         }
 
-        dump($data);
+        // dump($data);
 
         return $this->render('meal/index.html.twig', [
             'form' => $form->createView(),
@@ -59,6 +63,9 @@ class MealController extends AbstractController
 
 
 
+// $language = $languageRepository->find()->getLocale();
+// dump($request->get('filter_meals')['lang']);
+
 // $serializer = new Serializer([new ObjectNormalizer()], [new JsonEncoder()]);
 // $jsonContent = $serializer->serialize($data, 'json');
 // $json_response =  new JsonResponse($response);
@@ -66,6 +73,23 @@ class MealController extends AbstractController
 // $rep = $entityManager->getRepository('Gedmo\Translatable\Entity\Translation');
 // $translat = $rep->findTranslations($mealRepository->find(1));
 // dump($translat);
+
+// $pagination = $paginator->paginate(
+//     $data, /* query NOT result */
+//     1, /*page number*/
+//     5, /*limit per page*/
+// );
+
+// dump($pagination->last);
+
+// dump((new Paginator($query))->paginate($page));
+// return (new Paginator($qb))->paginate($page);
+// return $query;
+
+// $paginator
+//     ->getQuery()
+//     ->setFirstResult($per_page * $page)
+//     ->setMaxResults($per_page);
 
 
 // $em = $this->getEntityManager();

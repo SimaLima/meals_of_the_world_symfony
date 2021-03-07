@@ -5,7 +5,7 @@ namespace App\Repository;
 use App\Entity\Meal;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
-use Doctrine\Common\Collections\Criteria;
+use Symfony\Component\HttpFoundation\Request;
 
 use Doctrine\ORM\QueryBuilder as DoctrineQueryBuilder;
 use Doctrine\ORM\Tools\Pagination\CountWalker;
@@ -25,12 +25,14 @@ class MealRepository extends ServiceEntityRepository
         parent::__construct($registry, Meal::class);
     }
 
-
-    public function filter($data)
+    /**
+     * @param object $data
+     */
+    public function filter($data, $request)
     {
         // dump($data);
         $per_page =   (isset($data['per_page'])) ? $data['per_page'] : 5;
-        $page =       (isset($data['page'])) ? $data['page'] : null;
+        $page_num =   (isset($data['page'])) ? $data['page'] : 1;
         $category =   (isset($data['category'])) ? $data['category'] : null;
         $with =       (isset($data['with'])) ? $data['with'] : [];
         $tags =       (isset($data['tags'])) ? $data['tags'] : [];
@@ -47,16 +49,78 @@ class MealRepository extends ServiceEntityRepository
         $query = $query->getQuery();
 
         // set language for EVERYTHING in query, instead of default
-        $query->setHint(
-            \Doctrine\ORM\Query::HINT_CUSTOM_OUTPUT_WALKER,
-            'Gedmo\\Translatable\\Query\\TreeWalker\\TranslationWalker'
-        );
-        $query->setHint(\Gedmo\Translatable\TranslatableListener::HINT_TRANSLATABLE_LOCALE, $lang);
+        $query
+            ->setHint(
+                \Doctrine\ORM\Query::HINT_CUSTOM_OUTPUT_WALKER,
+                'Gedmo\\Translatable\\Query\\TreeWalker\\TranslationWalker'
+            )
+            ->setHint(\Gedmo\Translatable\TranslatableListener::HINT_TRANSLATABLE_LOCALE, $lang);
+
+
+        // pagination
+        $paginator = new DoctrinePaginator($query);
+        $total_items = count($paginator);
+        $total_pages = (int)ceil($total_items / $per_page);
+
+
+        // DONE
+        $meta = [
+            'currentPage' => $page_num,
+            'totalItems' => $total_items,
+            'itemsPerPage' => $per_page,
+            'totalPages' => $total_pages,
+        ];
+
+        // $links = first, last, prev, next, self
+        $first = null;
+        $last = null;
+        $prev = null;
+        $next = null;
+        $self = $request->getUri();
+
+        if ($total_pages != $page_num) {
+            if ($page_num > 1) {
+                $prev = Request::create($self, 'GET', array('filter_meals[page]' => $page_num-1))->getUri();
+                $first = Request::create($self, 'GET', array('filter_meals[page]' => 1))->getUri();
+            }
+            if ($page_num == 1) {
+                $first = Request::create($self, 'GET', array('filter_meals[page]' => 1))->getUri();
+                $last = Request::create($self, 'GET', array('filter_meals[page]' => $total_pages))->getUri();
+            }
+            if ($page_num < $total_pages) {
+                $next = Request::create($self, 'GET', array('filter_meals[page]' => $page_num+1))->getUri();
+                $last = Request::create($self, 'GET', array('filter_meals[page]' => $total_pages))->getUri();
+            }
+        }
+
+
+        $links = [
+            'first' => $first,
+            'last' => $last,
+            'prev' => $prev,
+            'next' => $next,
+            'self' => $self,
+        ];
+        dump($links);
+
+        $query = $query->setFirstResult($per_page * ($page_num-1))
+                       ->setMaxResults($per_page);
 
         // finally...
         $results = $query->getArrayResult();
+        $results = $this->formatData($results, $diff_time);
+        // and in the end...
+        return $results;
+    }
 
-        // format data (serializer?)
+
+
+
+    /**
+     * Format Data (serializer?)
+     */
+    private function formatData($results, $diff_time)
+    {
         $results = array_map(function($result) use ($diff_time) {
             // return $result;
             $status = 'created';
@@ -113,8 +177,6 @@ class MealRepository extends ServiceEntityRepository
             return $data;
         }, $results);
 
-
-        // and in the end...
         return $results;
     }
 

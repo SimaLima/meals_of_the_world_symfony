@@ -6,7 +6,6 @@ use Symfony\Bundle\FrameworkBundle\Kernel\MicroKernelTrait;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use Symfony\Component\HttpKernel\Kernel as BaseKernel;
 use Symfony\Component\Routing\Loader\Configurator\RoutingConfigurator;
-// use Stof\DoctrineExtensionsBundle\StofDoctrineExtensionsBundle;
 
 class Kernel extends BaseKernel
 {
@@ -37,12 +36,4 @@ class Kernel extends BaseKernel
         }
     }
 
-    // public function registerBundles()
-    // {
-    //     $bundles = array(
-    //         new Stof\DoctrineExtensionsBundle\StofDoctrineExtensionsBundle(),
-    //     );
-    //
-    //     // ...
-    // }
 }

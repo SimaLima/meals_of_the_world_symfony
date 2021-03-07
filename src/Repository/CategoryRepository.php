@@ -19,6 +19,31 @@ class CategoryRepository extends ServiceEntityRepository
         parent::__construct($registry, Category::class);
     }
 
+    /**
+     * Get list of category options (for form)
+     */
+    public function getCategoryOptions($lang = 'de_DE')
+    {
+        // dump($lang);
+        $query = $this->createQueryBuilder('categ')
+                      ->orderBy('categ.id', 'asc')
+                      ->getQuery();
+        // set language for EVERYTHING in query, instead of default
+        $query->setHint(
+            \Doctrine\ORM\Query::HINT_CUSTOM_OUTPUT_WALKER,
+            'Gedmo\\Translatable\\Query\\TreeWalker\\TranslationWalker'
+        );
+        $query->setHint(\Gedmo\Translatable\TranslatableListener::HINT_TRANSLATABLE_LOCALE, $lang);
+        $categories = $query->getArrayResult();
+
+        $options = [];
+        foreach ($categories as $category) {$options[$category['title']] = $category['id'];}
+
+        $options['null'] = 'null';
+        $options['!null'] = 'not_null';
+        return $options;
+    }
+
     // /**
     //  * @return Category[] Returns an array of Category objects
     //  */

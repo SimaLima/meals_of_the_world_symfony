@@ -17,24 +17,26 @@ use App\Entity\Tag;
 use App\Entity\Language;
 use App\Repository\CategoryRepository;
 use App\Repository\TagRepository;
-use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
+use Symfony\Component\Form\FormInterface;
 
 
 class FilterMealsType extends AbstractType
 {
-    private $em;
-    private $categ_rep;
-    private $language;
+    private $categoryRepository;
+    private $tagRepository;
 
-    public function __construct(EntityManagerInterface $entityManager, CategoryRepository $categoryRepository)
+    public function __construct(CategoryRepository $categoryRepository, TagRepository $tagRepository)
     {
-        $this->em = $entityManager;
-        $this->categ_rep = $categoryRepository;
+        $this->categoryRepository = $categoryRepository;
+        $this->tagRepository = $tagRepository;
     }
 
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
+        $language = $options['language'] ?? 'en_US';
+        // if () $language = '';
+
         $builder
             ->add('per_page', IntegerType::class, [
                 'required' => false,
@@ -50,21 +52,12 @@ class FilterMealsType extends AbstractType
                 'attr' => ['min' => 1, 'max' => 10],
                 'constraints' => [new Range(['min'=> 1, 'max' => 10])],
             ])
-            // ->add('category', ChoiceType::class, [
-            //     'required' => false,
-            //     'label' => 'Category:',
-            //     'row_attr' => ['class' => 'select-type category-select'],
-            //     'choices' => $this->getCategoryOptions(),
-            //     'choice_label' => function($category) {
-            //         if ($category == 'null') return 'null';
-            //         if ($category == 'not_null') return '!null';
-            //         // translation
-            //         $category = $this->categ_rep->find($category);
-            //         $category->setTranslatableLocale($this->language);
-            //         $this->em->refresh($category);
-            //         return $category->getTitle();
-            //     },
-            // ])
+            ->add('category', ChoiceType::class, [
+                'required' => false,
+                'label' => 'Category:',
+                'row_attr' => ['class' => 'select-type category-select'],
+                'choices' => $this->categoryRepository->getCategoryOptions($language),
+            ])
             ->add('with', ChoiceType::class, [
                 'required' => false,
                 'label' => 'With:',
@@ -80,27 +73,12 @@ class FilterMealsType extends AbstractType
                     'choices' => [1, 2, 3]
                 ])],
             ])
-            ->add('tags', EntityType::class, [
+            ->add('tags', ChoiceType::class, [
                 'required' => false,
                 'label' => 'Tags:',
                 'row_attr' => ['class' => 'multiselect-type tag-options'],
                 'multiple' => true,
-                'class' => Tag::class,
-                'choice_label' => 'title',
-                // 'query_builder' => function (TagRepository $tag) {
-                //     return $tag->createQueryBuilder('tag')->getQuery()->setHint(
-                //         \Doctrine\ORM\Query::HINT_CUSTOM_OUTPUT_WALKER,
-                //         'Gedmo\\Translatable\\Query\\TreeWalker\\TranslationWalker'
-                //     )
-                //     ->setHint(\Gedmo\Translatable\TranslatableListener::HINT_TRANSLATABLE_LOCALE, 'hr_HR');
-                //     // ->orderBy('tag.id', 'ASC');
-                // },
-                // 'choice_label' => function($tag) {
-                //     // translation
-                //     $tag->setTranslatableLocale($this->language);
-                //     $this->em->refresh($tag);
-                //     return $tag->getTitle();
-                // },
+                'choices' => $this->tagRepository->getTagOptions($language),
             ])
             ->add('lang', EntityType::class, [
                 'required' => true,
@@ -120,28 +98,99 @@ class FilterMealsType extends AbstractType
                 'row_attr' => ['class' => 'submit-type submit-button'],
             ])
             ->setMethod('GET')
-            ->addEventListener(FormEvents::SUBMIT, function (FormEvent $event) {
-                $data = $event->getData();
-                $this->language = (isset($data['lang'])) ? $data['lang']->getLocale() : 'en_US';
-            })
+            // ->addEventListener(FormEvents::PRE_SET_DATA, [$this, 'onPreSetData'])
+            ->addEventListener(FormEvents::POST_SUBMIT, [$this, 'onPostSubmit'])
         ;
+
+
+        // $builder->get('lang')->addEventListener(
+        //     FormEvents::POST_SUBMIT,
+        //     function(FormEvent $event) {
+        //         $form = $event->getForm();
+        //         $data = $event->getData();
+        //         dump($options['language']);
+        //
+        //         // if ($data) {
+        //         //     $choices = $this->tagRepository->getTagOptions('hr_HR');
+        //         // } else {
+        //         //     $choices = $this->tagRepository->getTagOptions('en_US');
+        //         // }
+        //         //
+        //         $form->getParent()->add('tags', ChoiceType::class, [
+        //             'required' => false,
+        //             'label' => 'Tags:',
+        //             'row_attr' => ['class' => 'multiselect-type tag-options'],
+        //             'multiple' => true,
+        //             'choices' => $choices,
+        //         ]);
+        //     }
+        // );
+
+
+        // $builder->addEventListener(
+        //     FormEvents::PRE_SET_DATA,
+        //     function (FormEvent $event) {
+        //         /** @var Article|null $data */
+        //         $data = $event->getData();
+        //         if (!$data) {
+        //             return;
+        //         }
+        //         $this->setupSpecificLocationNameField(
+        //             $event->getForm(),
+        //             $data->getLocation()
+        //         );
+        //     }
+        // );
+        // $builder->get('location')->addEventListener(
+        //     FormEvents::POST_SUBMIT,
+        //     function(FormEvent $event) {
+        //         $form = $event->getForm();
+        //         $this->setupSpecificLocationNameField(
+        //             $form->getParent(),
+        //             $form->getData()
+        //         );
+        //     }
+        // );
+
+        // $builder->addEventListener(FormEvents::PRE_SUBMIT, function(FormEvent $event) {
+        //     $data = $event->getData();
+        //     $form = $event->getForm();
+        //
+        //     if (isset($data['language'])) {
+        //         // $field2 = $this->container->get('repository')->find($data['field1'])->getValue();
+        //         $data['language'] = 'hr_HR';
+        //         $event->setData($data);
+        //     }
+        //     // dump($data);
+        // });
     }
 
-    public function getCategoryOptions()
+    public function onPreSetData(FormEvent $event)
     {
-        $options = [];
-        $categories = $this->categ_rep->findAll();
-        foreach ($categories as $category) {
-            $options[$category->getTitle()] = $category->getId();
-        }
-        $options['null'] = 'null';
-        $options['!null'] = 'not_null';
-        return $options;
+        // $data = $event->getForm()->getConfig()->getOptions()['language'];
+        // $language = $event->getForm()->getConfig()->setAction(['language' => 'end']);
+        // $this->language = (isset($data['lang'])) ? $data['lang']->getLocale() : 'en_US';
+    }
+
+    public function onPostSubmit(FormEvent $event)
+    {
+        $form = $event->getForm();
+        $data = $event->getData();
+        // $lang = $form->get('lang')->getData();
+
+        // $data['language'] = '123';
+        // $event->setData($data);
+        // dump($event->getData());
+
+        // if ($data['lang']->getLocale() == 'en_US') {
+        //     return;
+        // }
     }
 
     public function configureOptions(OptionsResolver $resolver)
     {
         $resolver->setDefaults([
+            'language' => 'en_US'
         ]);
     }
 }

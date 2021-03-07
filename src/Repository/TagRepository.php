@@ -19,6 +19,30 @@ class TagRepository extends ServiceEntityRepository
         parent::__construct($registry, Tag::class);
     }
 
+    /**
+     * Get list of tag options (for form)
+     */
+    public function getTagOptions($lang = 'de_DE')
+    {
+        // dump($lang);
+        $query = $this->createQueryBuilder('tag')
+                      ->orderBy('tag.id', 'asc')
+                      ->getQuery();
+        // set language for EVERYTHING in query, instead of default
+        $query->setHint(
+            \Doctrine\ORM\Query::HINT_CUSTOM_OUTPUT_WALKER,
+            'Gedmo\\Translatable\\Query\\TreeWalker\\TranslationWalker'
+        );
+        $query->setHint(\Gedmo\Translatable\TranslatableListener::HINT_TRANSLATABLE_LOCALE, $lang);
+        $tags = $query->getArrayResult();
+
+        $options = [];
+        foreach ($tags as $tag) {$options[$tag['title']] = $tag['id'];}
+
+        return $options;
+    }
+
+
     // /**
     //  * @return Tag[] Returns an array of Tag objects
     //  */
