@@ -5,12 +5,11 @@ namespace App\Repository;
 use App\Entity\Meal;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use Doctrine\ORM\Query;
 use Symfony\Component\HttpFoundation\Request;
-
-use Doctrine\ORM\QueryBuilder as DoctrineQueryBuilder;
-use Doctrine\ORM\Tools\Pagination\CountWalker;
-use Doctrine\ORM\Tools\Pagination\Paginator as DoctrinePaginator;
-
+use Gedmo\Translatable\TranslatableListener;
+use Knp\Component\Pager\PaginatorInterface;
+use Doctrine\ORM\Query\Expr\Join;
 
 /**
  * @method Meal|null find($id, $lockMode = null, $lockVersion = null)
@@ -20,24 +19,24 @@ use Doctrine\ORM\Tools\Pagination\Paginator as DoctrinePaginator;
  */
 class MealRepository extends ServiceEntityRepository
 {
-    public function __construct(ManagerRegistry $registry)
+    private $paginator;
+
+    public function __construct(ManagerRegistry $registry, PaginatorInterface $paginator)
     {
         parent::__construct($registry, Meal::class);
+        $this->paginator = $paginator;
     }
 
-    /**
-     * @param object $data
-     */
     public function filter($data, $request)
     {
         // dump($data);
-        $per_page =   (isset($data['per_page'])) ? $data['per_page'] : 5;
+        $per_page =   (isset($data['per_page'])) ? $data['per_page'] : 20;
         $page_num =   (isset($data['page'])) ? $data['page'] : 1;
         $category =   (isset($data['category'])) ? $data['category'] : null;
         $with =       (isset($data['with'])) ? $data['with'] : [];
         $tags =       (isset($data['tags'])) ? $data['tags'] : [];
         $diff_time =  (isset($data['diff_time'])) ? $data['diff_time'] : null;
-        $lang =       (isset($data['lang'])) ? $data['lang']->getLocale() : 'en_US'; // required, but still
+        $language =   (isset($data['lang'])) ? $data['lang']->getLocale() : 'en_US'; // required, but still...
 
         // build query
         $query = $this->createQueryBuilder('meal')
@@ -47,163 +46,28 @@ class MealRepository extends ServiceEntityRepository
         $query = $this->filterByDiffTime($query, $diff_time);
         $query = $this->addProperties($query, $with);
         $query = $query->getQuery();
+        $query->setHydrationMode(Query::HYDRATE_ARRAY);
 
-        // set language for EVERYTHING in query, instead of default
-        $query
-            ->setHint(
-                \Doctrine\ORM\Query::HINT_CUSTOM_OUTPUT_WALKER,
-                'Gedmo\\Translatable\\Query\\TreeWalker\\TranslationWalker'
-            )
-            ->setHint(\Gedmo\Translatable\TranslatableListener::HINT_TRANSLATABLE_LOCALE, $lang);
+        // set language of query results
+        $query->setHint(
+                    Query::HINT_CUSTOM_OUTPUT_WALKER,
+                    'Gedmo\\Translatable\\Query\\TreeWalker\\TranslationWalker'
+                )
+              ->setHint(TranslatableListener::HINT_TRANSLATABLE_LOCALE, $language);
 
+        // get results and paginate data (meta & links included)
+        $response = $this->paginateResults(
+            $query,
+            $page_num,
+            $per_page,
+            $request->getUri() // current url (for links)
+        );
 
-        // pagination
-        $paginator = new DoctrinePaginator($query);
-        $total_items = count($paginator);
-        $total_pages = (int)ceil($total_items / $per_page);
+        // calculate meal status and remove unnecessary values (slug, deletedAt...)
+        $response['data'] = $this->formatData($response['data'], $diff_time);
 
-
-        // DONE
-        $meta = [
-            'currentPage' => $page_num,
-            'totalItems' => $total_items,
-            'itemsPerPage' => $per_page,
-            'totalPages' => $total_pages,
-        ];
-
-        // $links = first, last, prev, next, self
-        $first = null;
-        $last = null;
-        $prev = null;
-        $next = null;
-        $self = $request->getUri();
-
-        if ($total_pages != $page_num) {
-            if ($page_num > 1) {
-                $prev = Request::create($self, 'GET', array('filter_meals[page]' => $page_num-1))->getUri();
-                $first = Request::create($self, 'GET', array('filter_meals[page]' => 1))->getUri();
-            }
-            if ($page_num == 1) {
-                $first = Request::create($self, 'GET', array('filter_meals[page]' => 1))->getUri();
-                $last = Request::create($self, 'GET', array('filter_meals[page]' => $total_pages))->getUri();
-            }
-            if ($page_num < $total_pages) {
-                $next = Request::create($self, 'GET', array('filter_meals[page]' => $page_num+1))->getUri();
-                $last = Request::create($self, 'GET', array('filter_meals[page]' => $total_pages))->getUri();
-            }
-        }
-
-
-        $links = [
-            'first' => $first,
-            'last' => $last,
-            'prev' => $prev,
-            'next' => $next,
-            'self' => $self,
-        ];
-        dump($links);
-
-        $query = $query->setFirstResult($per_page * ($page_num-1))
-                       ->setMaxResults($per_page);
-
-        // finally...
-        $results = $query->getArrayResult();
-        $results = $this->formatData($results, $diff_time);
-        // and in the end...
-        return $results;
-    }
-
-
-
-
-    /**
-     * Format Data (serializer?)
-     */
-    private function formatData($results, $diff_time)
-    {
-        $results = array_map(function($result) use ($diff_time) {
-            // return $result;
-            $status = 'created';
-            if ($diff_time) {
-                if ($result['deletedAt'] != null)
-                    $status = 'deleted';
-                elseif ($result['createdAt'] != $result['updatedAt'])
-                    $status = 'modified';
-            }
-
-            $data = [
-                'id' => $result['id'],
-                'title' => $result['title'],
-                'description' => $result['description'],
-                'status' => $status,
-            ];
-            if (array_key_exists('tag', $result)) {
-                foreach ($result['tag'] as $key => $tag) {
-                    $tags[] = [
-                        'id' => $tag['id'],
-                        'title' => $tag['title'],
-                        'slug' => $tag['slug'],
-                    ];
-                }
-            }
-            if (array_key_exists('category', $result)) {
-                if ($result['category'] == null) {
-                    $category = null;
-                } else {
-                    $category = [
-                        'id' => $result['category']['id'],
-                        'title' => $result['category']['title'],
-                        'slug' => $result['category']['slug'],
-                    ];
-                }
-            }
-            if (array_key_exists('ingredient', $result)) {
-                foreach ($result['ingredient'] as $key => $ingredient) {
-                    $ingredients[] = [
-                        'id' => $ingredient['id'],
-                        'title' => $ingredient['title'],
-                        'slug' => $ingredient['slug'],
-                    ];
-                }
-            }
-
-            if (array_key_exists('category', $result))
-                $data['category'] = $category;
-            if (array_key_exists('tag', $result))
-                $data['tags'] = $tags;
-            if (array_key_exists('ingredient', $result))
-                $data['ingredients'] = $ingredients;
-
-            return $data;
-        }, $results);
-
-        return $results;
-    }
-
-    /**
-     * ADD PROPERTIES: tags, category, ingredients
-     */
-    private function addProperties($query, $with)
-    {
-        if (empty($with) || count($with) == 0) return $query;
-
-        // tags
-        if (in_array(1, $with)) {
-            $query->leftJoin('meal.tag', 'meal_tags')
-                  ->addSelect('meal_tags');
-        }
-        // category
-        if (in_array(2, $with)) {
-            $query->leftJoin('meal.category', 'meal_category')
-                  ->addSelect('meal_category');
-        }
-        // ingredients
-        if ( in_array(3, $with) ) {
-            $query->leftJoin('meal.ingredient', 'meal_ingredients')
-                  ->addSelect('meal_ingredients');
-        }
-
-        return $query;
+        // and finally get back to controller...
+        return $response;
     }
 
     /**
@@ -233,13 +97,18 @@ class MealRepository extends ServiceEntityRepository
     {
         if (empty($tags) || count($tags) == 0) return $query;
 
-        $query->innerJoin('meal.tag', 'tags')
-              ->andWhere('tags.id in (:tags)')
-              ->setParameter('tags', $tags)
-              ->groupBy('meal.id')
-              ->having('count(distinct tags.id) = :num_of_tags')
-              ->setParameter('num_of_tags', count($tags));
+        for ($i = 0; $i < count($tags); $i++) {
+            $query->innerJoin('meal.tag', 'tags'.$i, Join::WITH, 'tags' .$i. '= :tag' . $i);
+            $query->setParameter('tag' . $i, $tags[$i]);
+        }
 
+        // goes wild with translations...
+        // $query->innerJoin('meal.tag', 'tags')
+        //       ->andWhere('tags.id in (:tags)')
+        //       ->setParameter('tags', $tags)
+        //       ->groupBy('meal.id')
+        //       ->having('count(distinct tags.id) = :num_of_tags')
+        //       ->setParameter('num_of_tags', count($tags));
         return $query;
     }
 
@@ -258,6 +127,140 @@ class MealRepository extends ServiceEntityRepository
               ->setParameter('diff_time', $diff_time->format('Y-m-d H:i:s'));
 
         return $query;
+    }
+
+    /**
+     * ADD PROPERTIES: tags, category, ingredients
+     */
+    private function addProperties($query, $with)
+    {
+        if (empty($with) || count($with) == 0) return $query;
+
+        // category
+        if (in_array(2, $with)) {
+            $query->leftJoin('meal.category', 'meal_category')
+                  ->addSelect('meal_category');
+        }
+
+        // tags
+        if (in_array(1, $with)) {
+            $query->leftJoin('meal.tag', 'meal_tag')
+                  ->addSelect('meal_tag');
+        }
+
+        // ingredients
+        if ( in_array(3, $with) ) {
+            $query->leftJoin('meal.ingredient', 'meal_ingredient')
+                  ->addSelect('meal_ingredient');
+        }
+
+        return $query;
+    }
+
+    /**
+     * Paginate results
+     */
+    private function paginateResults($query, $page_num, $per_page, $uri)
+    {
+        // dump($query->getSQL());
+
+        $pagination = $this->paginator->paginate(
+            $query,
+            $page_num,
+            $per_page,
+            array('wrap-queries' => true)
+        );
+
+        // META
+        $total_pages = $pagination->getPageCount();
+        $total_items = $pagination->getTotalItemCount();
+
+        $meta = [
+            'currentPage' => $page_num,
+            'totalItems' => $total_items,
+            'itemsPerPage' => $per_page,
+            'totalPages' => $total_pages,
+        ];
+
+        // LINKS
+        $first = null;
+        $last = null;
+        $prev = null;
+        $next = null;
+        $self = $uri;
+
+        if ($total_pages > 1) {
+            $first = Request::create($self, 'GET', array('filter_meals[page]' => 1))->getUri();
+            $last = Request::create($self, 'GET', array('filter_meals[page]' => $total_pages))->getUri();
+
+            // first
+            if ($page_num == 1) {
+                $next = Request::create($self, 'GET', array('filter_meals[page]' => $page_num+1))->getUri();
+            }
+            // last
+            if ($page_num == $total_pages) {
+                $prev = Request::create($self, 'GET', array('filter_meals[page]' => $page_num-1))->getUri();
+            }
+            // n > 2,3,4 < n
+            if ($page_num > 1 && $page_num < $total_pages) {
+                $prev = Request::create($self, 'GET', array('filter_meals[page]' => $page_num-1))->getUri();
+                $next = Request::create($self, 'GET', array('filter_meals[page]' => $page_num+1))->getUri();
+            }
+        }
+
+        $links = [
+            'first' => $first,
+            'last' => $last,
+            'prev' => $prev,
+            'next' => $next,
+            'self' => $self,
+        ];
+
+        return [
+            'meta' => $meta,
+            'data' => $pagination->getItems(),
+            'links' => $links
+        ];
+    }
+
+    /**
+     * Format Data (serializer, or not?)
+     */
+    private function formatData($results, $diff_time)
+    {
+        foreach ($results as $key => $result) {
+            $status = 'created';
+            if ($diff_time) {
+                if ($result['deletedAt'] != null) {
+                    $status = 'deleted';
+                } elseif ($result['createdAt'] != $result['updatedAt']) {
+                    $status = 'modified';
+                }
+            }
+
+            // remove unnecessary
+            unset($result['slug']);
+            unset($result['updatedAt']);
+            unset($result['deletedAt']);
+
+            // rename 'createdAt' to 'status'
+            $keys = array_keys($result);
+            $keys[array_search('createdAt', $keys)] = 'status';
+
+            // if(array_key_exists('tag', $result)) $keys[array_search('tag', $keys)] = 'tags';
+            // if(array_key_exists('ingredient', $result)) $keys[array_search('ingredient', $keys)] = 'ingredients';
+
+            // combine everything
+            $result = array_combine($keys, $result);
+
+            // set status value
+            $result['status'] = $status;
+
+            // override current data with new
+            $results[$key] = $result;
+        }
+
+        return $results;
     }
 
 

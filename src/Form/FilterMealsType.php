@@ -41,27 +41,27 @@ class FilterMealsType extends AbstractType
             ->add('per_page', IntegerType::class, [
                 'required' => false,
                 'label' => 'Per page:',
-                'row_attr' => ['class' => 'input-type per-page-input'],
+                'row_attr' => ['class' => 'input-type'],
                 'attr' => ['min' => 1, 'max' => 50],
                 'constraints' => [new Range(['min'=> 1, 'max' => 50])],
             ])
             ->add('page', IntegerType::class, [
                 'required' => false,
                 'label' => 'Page:',
-                'row_attr' => ['class' => 'input-type page-input'],
+                'row_attr' => ['class' => 'input-type'],
                 'attr' => ['min' => 1, 'max' => 10],
                 'constraints' => [new Range(['min'=> 1, 'max' => 10])],
             ])
             ->add('category', ChoiceType::class, [
                 'required' => false,
                 'label' => 'Category:',
-                'row_attr' => ['class' => 'select-type category-select'],
+                'row_attr' => ['class' => 'select-type'],
                 'choices' => $this->categoryRepository->getCategoryOptions($language),
             ])
             ->add('with', ChoiceType::class, [
                 'required' => false,
                 'label' => 'With:',
-                'row_attr' => ['class' => 'multiselect-type with-options'],
+                'row_attr' => ['class' => 'multiselect-type'],
                 'multiple' => true,
                 'choices' => [
                     'tags' => 1,
@@ -76,26 +76,26 @@ class FilterMealsType extends AbstractType
             ->add('tags', ChoiceType::class, [
                 'required' => false,
                 'label' => 'Tags:',
-                'row_attr' => ['class' => 'multiselect-type tag-options'],
+                'row_attr' => ['class' => 'multiselect-type'],
                 'multiple' => true,
                 'choices' => $this->tagRepository->getTagOptions($language),
             ])
             ->add('lang', EntityType::class, [
                 'required' => true,
                 'label' => 'Language:',
-                'row_attr' => ['class' => 'select-type language-select'],
+                'row_attr' => ['class' => 'select-type'],
                 'class' => Language::class,
                 'choice_label' => 'title',
             ])
             ->add('diff_time', DateType::class, [
                 'required' => false,
                 'label' => 'Select date:',
-                'row_attr' => ['class' => 'date-type date-picker'],
+                'row_attr' => ['class' => 'date-type'],
                 'widget' => 'single_text',
             ])
             ->add('submit', SubmitType::class, [
                 'label' => 'Filter',
-                'row_attr' => ['class' => 'submit-type submit-button'],
+                'row_attr' => ['class' => 'submit-type'],
             ])
             ->setMethod('GET')
             // ->addEventListener(FormEvents::PRE_SET_DATA, [$this, 'onPreSetData'])

@@ -38,8 +38,3 @@ doctrine:
                 dir: "%kernel.project_dir%/vendor/gedmo/doctrine-extensions/src/Tree/Entity"
                 alias: GedmoTree
                 is_bundle: false
-stof_doctrine_extensions:
-    default_locale: en_US
-    orm:
-        default:
-            sluggable: true%

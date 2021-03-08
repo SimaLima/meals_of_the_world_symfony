@@ -3,13 +3,13 @@
 
 namespace App\EventSubscriber;
 
-use Gedmo\Loggable\LoggableListener;
-use Gedmo\SoftDeleteable\SoftDeleteableListener;
-use Gedmo\Translatable\TranslatableListener;
-use JMS\Serializer\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpKernel\Event\FinishRequestEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
+use Gedmo\Translatable\TranslatableListener;
+use Gedmo\SoftDeleteable\SoftDeleteableListener;
+use Gedmo\Loggable\LoggableListener;
+use JMS\Serializer\EventDispatcher\EventSubscriberInterface;
 
 class DoctrineExtensionSubscriber implements EventSubscriberInterface
 {
@@ -56,17 +56,21 @@ class DoctrineExtensionSubscriber implements EventSubscriberInterface
 
     public function onKernelRequest(): void
     {
-        if ($this->tokenStorage !== null &&
-            $this->tokenStorage->getToken() !== null &&
-            $this->tokenStorage->getToken()->isAuthenticated() === true
-        ) {
-            //$this->softDeletableListener->
-        }
+        // if (
+        //     $this->tokenStorage !== null &&
+        //     $this->tokenStorage->getToken() !== null &&
+        //     $this->tokenStorage->getToken()->isAuthenticated() === true
+        // ) {
+        //     // $this->softDeletableListener->
+        // }
     }
 
     public function onLateKernelRequest(FinishRequestEvent $event): void
     {
-        $this->translatableListener->setTranslatableLocale($event->getRequest()->getLocale());
+        $this->translatableListener
+             ->setTranslatableLocale(
+                 $event->getRequest()
+                       ->getLocale()
+             );
     }
-
 }

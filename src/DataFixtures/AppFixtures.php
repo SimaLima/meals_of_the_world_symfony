@@ -14,11 +14,11 @@ use Gedmo\Translatable\Translatable;
 
 class AppFixtures extends Fixture
 {
-    public $repository;
+    public $translationRepository;
 
     public function load(ObjectManager $manager)
     {
-        $this->repository = $manager->getRepository('Gedmo\\Translatable\\Entity\\Translation');
+        $this->translationRepository = $manager->getRepository('Gedmo\\Translatable\\Entity\\Translation');
         $this->loadLanguages($manager);
         $this->loadTags($manager);
         $this->loadIngredients($manager);
@@ -41,6 +41,7 @@ class AppFixtures extends Fixture
             $language->setTitle($value['title']);
             $manager->persist($language);
         }
+
         $manager->flush();
     }
 
@@ -50,13 +51,14 @@ class AppFixtures extends Fixture
             $tag = new Tag();
             $tag->setTitle('Tag '.$i.' (en)');
             $tag->setSlug('tag-'.$i);
-            $this->repository
-                    ->translate($tag, 'title', 'hr_HR', 'Oznaka '.$i.' (hr)')
-                    ->translate($tag, 'title', 'de_DE', 'Etikett '.$i.' (de)')
-                    ->translate($tag, 'title', 'fr_FR', 'Etiqueter '.$i.' (fr)');
+            $this->translationRepository
+                 ->translate($tag, 'title', 'hr_HR', 'Oznaka '.$i.' (hr)')
+                 ->translate($tag, 'title', 'de_DE', 'Etikett '.$i.' (de)')
+                 ->translate($tag, 'title', 'fr_FR', 'Etiqueter '.$i.' (fr)');
             $manager->persist($tag);
             $this->addReference('tag-'.$i, $tag);
         }
+
         $manager->flush();
     }
 
@@ -66,13 +68,14 @@ class AppFixtures extends Fixture
             $ingredient = new Ingredient();
             $ingredient->setTitle('Ingredient '.$i.' (en)');
             $ingredient->setSlug('ingredient-'.$i);
-            $this->repository
-                    ->translate($ingredient, 'title', 'hr_HR', 'Sastojak '.$i.' (hr)')
-                    ->translate($ingredient, 'title', 'de_DE', 'Zutat '.$i.' (de)')
-                    ->translate($ingredient, 'title', 'fr_FR', 'Ingredient '.$i.' (fr)');
+            $this->translationRepository
+                 ->translate($ingredient, 'title', 'hr_HR', 'Sastojak '.$i.' (hr)')
+                 ->translate($ingredient, 'title', 'de_DE', 'Zutat '.$i.' (de)')
+                 ->translate($ingredient, 'title', 'fr_FR', 'Ingredient '.$i.' (fr)');
             $manager->persist($ingredient);
             $this->addReference('ingredient-'.$i, $ingredient);
         }
+
         $manager->flush();
     }
 
@@ -82,13 +85,14 @@ class AppFixtures extends Fixture
             $category = new Category();
             $category->setTitle('Category '.$i.' (en)');
             $category->setSlug('category-'.$i);
-            $this->repository
-                    ->translate($category, 'title', 'hr_HR', 'Kategorija '.$i.' (hr)')
-                    ->translate($category, 'title', 'de_DE', 'Kategorie '.$i.' (de)')
-                    ->translate($category, 'title', 'fr_FR', 'Categorie '.$i.' (fr)');
+            $this->translationRepository
+                 ->translate($category, 'title', 'hr_HR', 'Kategorija '.$i.' (hr)')
+                 ->translate($category, 'title', 'de_DE', 'Kategorie '.$i.' (de)')
+                 ->translate($category, 'title', 'fr_FR', 'Categorie '.$i.' (fr)');
             $manager->persist($category);
             $this->addReference('category-'.$i, $category);
         }
+
         $manager->flush();
     }
 
@@ -99,10 +103,19 @@ class AppFixtures extends Fixture
             $meal->setTitle('Meal title '.$i.' (en)');
             $meal->setDescription('This is meal description '.$i.'. (en)');
             $meal->setSlug('meal-'.$i);
-            if ($i%5 != 0) $meal->setCategory($manager->merge($this->getReference('category-'.mt_rand(1,5))));
 
-            // 21,20,19,18...
-            $days = 22-$i;
+            // every 5th meal doesn't have category
+            if ($i%5 != 0) {
+                $meal->setCategory(
+                    $manager->merge(
+                        $this->getReference('category-'.mt_rand(1,5))
+                    )
+                );
+            }
+
+            // timestamps
+            // from 21 till yesterday -> 1 meal/day is created
+            $days = 21-$i;
             $created_at = new \DateTime('now-'.$days.' days');
             $updated_at = $created_at;
             $deleted_at = null;
@@ -134,16 +147,17 @@ class AppFixtures extends Fixture
                 );
             }
 
-            $this->repository
-                    ->translate($meal, 'title', 'hr_HR', 'Naslov jela '.$i.' (hr)')
-                    ->translate($meal, 'description', 'hr_HR', 'Ovo je opis jela '.$i.'. (hr)')
-                    ->translate($meal, 'title', 'de_DE', 'Mahlzeitentitel '.$i.' (de)')
-                    ->translate($meal, 'description', 'de_DE', 'Dies ist die Beschreibung der Mahlzeit '.$i.'. (de)')
-                    ->translate($meal, 'title', 'fr_FR', 'Titre du repas '.$i.' (fr)')
-                    ->translate($meal, 'description', 'fr_FR', 'Ceci est la description du repas '.$i.'. (fr)');
+            $this->translationRepository
+                 ->translate($meal, 'title', 'hr_HR', 'Naslov jela '.$i.' (hr)')
+                 ->translate($meal, 'description', 'hr_HR', 'Ovo je opis jela '.$i.'. (hr)')
+                 ->translate($meal, 'title', 'de_DE', 'Mahlzeitentitel '.$i.' (de)')
+                 ->translate($meal, 'description', 'de_DE', 'Dies ist die Beschreibung der Mahlzeit '.$i.'. (de)')
+                 ->translate($meal, 'title', 'fr_FR', 'Titre du repas '.$i.' (fr)')
+                 ->translate($meal, 'description', 'fr_FR', 'Ceci est la description du repas '.$i.'. (fr)');
             $manager->persist($meal);
             $this->addReference('meal-'.$i, $meal);
         }
+
         $manager->flush();
     }
 }
