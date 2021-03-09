@@ -5,6 +5,8 @@ namespace App\Repository;
 use App\Entity\Tag;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use Gedmo\Translatable\TranslatableListener;
+use Doctrine\ORM\Query;
 
 /**
  * @method Tag|null find($id, $lockMode = null, $lockVersion = null)
@@ -22,22 +24,29 @@ class TagRepository extends ServiceEntityRepository
     /**
      * Get list of tag options (for form)
      */
-    public function getTagOptions($lang = 'de_DE')
+    public function getTagOptions($lang = 'en_US')
     {
-        // dump($lang);
+        // define language
+        if (!in_array($lang, ['hr_HR', 'de_DE', 'fr_FR'])) $lang = 'en_US';
+
+        // query tags
         $query = $this->createQueryBuilder('tag')
                       ->orderBy('tag.id', 'asc')
                       ->getQuery();
-        // set language for EVERYTHING in query, instead of default
-        $query->setHint(
-            \Doctrine\ORM\Query::HINT_CUSTOM_OUTPUT_WALKER,
-            'Gedmo\\Translatable\\Query\\TreeWalker\\TranslationWalker'
-        );
-        $query->setHint(\Gedmo\Translatable\TranslatableListener::HINT_TRANSLATABLE_LOCALE, $lang);
-        $tags = $query->getArrayResult();
 
+        // set language for query
+        $query->setHint(
+                    Query::HINT_CUSTOM_OUTPUT_WALKER,
+                    'Gedmo\\Translatable\\Query\\TreeWalker\\TranslationWalker'
+                )
+              ->setHint(TranslatableListener::HINT_TRANSLATABLE_LOCALE, $lang);
+
+        $tags = $query->getArrayResult();
         $options = [];
-        foreach ($tags as $tag) {$options[$tag['title']] = $tag['id'];}
+
+        foreach ($tags as $tag) {
+            $options[$tag['title']] = $tag['id'];
+        }
 
         return $options;
     }

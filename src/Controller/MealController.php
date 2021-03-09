@@ -21,15 +21,21 @@ class MealController extends AbstractController
      */
     public function index(Request $request, MealRepository $mealRepository): Response
     {
-        $form = $this->createForm(FilterMealsType::class);
+        // pass language to form (caution: before validation)
+        $language = ($request->get('filter_meals')) ? $request->get('filter_meals')['lang'] : 'en_US';
+
+        // create form & handle request
+        $form = $this->createForm(FilterMealsType::class, ['language' => $language]);
         $form->handleRequest($request);
         $response = [];
 
+        // validate & filter data
         if ($form->isSubmitted() && $form->isValid()) {
             $data = $form->getData();
             $response = $mealRepository->filter($data, $request);
         }
 
+        // create json response
         $json_response =  new JsonResponse($response);
 
         return $this->render('meal/index.html.twig', [

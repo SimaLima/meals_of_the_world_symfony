@@ -5,6 +5,8 @@ namespace App\Repository;
 use App\Entity\Category;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use Doctrine\ORM\Query;
+use Gedmo\Translatable\TranslatableListener;
 
 /**
  * @method Category|null find($id, $lockMode = null, $lockVersion = null)
@@ -22,25 +24,33 @@ class CategoryRepository extends ServiceEntityRepository
     /**
      * Get list of category options (for form)
      */
-    public function getCategoryOptions($lang = 'de_DE')
+    public function getCategoryOptions($lang = 'en_US')
     {
-        // dump($lang);
+        // define language
+        if (!in_array($lang, ['hr_HR', 'de_DE', 'fr_FR'])) $lang = 'en_US';
+
+        // query categories
         $query = $this->createQueryBuilder('categ')
                       ->orderBy('categ.id', 'asc')
                       ->getQuery();
-        // set language for EVERYTHING in query, instead of default
-        $query->setHint(
-            \Doctrine\ORM\Query::HINT_CUSTOM_OUTPUT_WALKER,
-            'Gedmo\\Translatable\\Query\\TreeWalker\\TranslationWalker'
-        );
-        $query->setHint(\Gedmo\Translatable\TranslatableListener::HINT_TRANSLATABLE_LOCALE, $lang);
-        $categories = $query->getArrayResult();
 
+        // set language for query
+        $query->setHint(
+                    Query::HINT_CUSTOM_OUTPUT_WALKER,
+                    'Gedmo\\Translatable\\Query\\TreeWalker\\TranslationWalker'
+                )
+              ->setHint(TranslatableListener::HINT_TRANSLATABLE_LOCALE, $lang);
+
+        $categories = $query->getArrayResult();
         $options = [];
-        foreach ($categories as $category) {$options[$category['title']] = $category['id'];}
+
+        foreach ($categories as $category) {
+            $options[$category['title']] = $category['id'];
+        }
 
         $options['null'] = 'null';
         $options['!null'] = 'not_null';
+
         return $options;
     }
 

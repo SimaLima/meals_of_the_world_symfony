@@ -32,12 +32,14 @@ class Tag
     private $title;
 
     /**
-     * @ORM\ManyToMany(targetEntity=Meal::class, mappedBy="tag")
+     * @ORM\ManyToMany(targetEntity=Meal::class, mappedBy="tags")
      */
     private $meal;
 
     /**
      * @Gedmo\Locale
+     * Used locale to override Translation listener`s locale
+     * this is not a mapped field of entity metadata, just a simple property
      */
     private $locale;
 
@@ -95,8 +97,7 @@ class Tag
 
     public function removeMeal(Meal $meal): self
     {
-        if ($this->meal->contains($meal)) {
-            $this->meal->removeElement($meal);
+        if ($this->meal->removeElement($meal)) {
             $meal->removeTag($this);
         }
 
@@ -107,4 +108,6 @@ class Tag
     {
         $this->locale = $locale;
     }
+
+
 }

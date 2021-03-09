@@ -38,13 +38,10 @@ class Category
 
     /**
      * @Gedmo\Locale
+     * Used locale to override Translation listener`s locale
+     * this is not a mapped field of entity metadata, just a simple property
      */
     private $locale;
-
-    public function __construct()
-    {
-        $this->meal = new ArrayCollection();
-    }
 
     public function getId(): ?int
     {
@@ -95,8 +92,8 @@ class Category
 
     public function removeMeal(Meal $meal): self
     {
-        if ($this->meal->contains($meal)) {
-            $this->meal->removeElement($meal);
+        if ($this->meal->removeElement($meal)) {
+            // set the owning side to null (unless already changed)
             if ($meal->getCategory() === $this) {
                 $meal->setCategory(null);
             }
@@ -108,6 +105,5 @@ class Category
     public function setTranslatableLocale($locale)
     {
         $this->locale = $locale;
-        return $this;
     }
 }

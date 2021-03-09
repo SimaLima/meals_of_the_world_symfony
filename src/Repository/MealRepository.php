@@ -6,10 +6,10 @@ use App\Entity\Meal;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Doctrine\ORM\Query;
+use Doctrine\ORM\Query\Expr\Join;
 use Symfony\Component\HttpFoundation\Request;
 use Gedmo\Translatable\TranslatableListener;
 use Knp\Component\Pager\PaginatorInterface;
-use Doctrine\ORM\Query\Expr\Join;
 
 /**
  * @method Meal|null find($id, $lockMode = null, $lockVersion = null)
@@ -30,7 +30,7 @@ class MealRepository extends ServiceEntityRepository
     public function filter($data, $request)
     {
         // dump($data);
-        $per_page =   (isset($data['per_page'])) ? $data['per_page'] : 20;
+        $per_page =   (isset($data['per_page'])) ? $data['per_page'] : 5;
         $page_num =   (isset($data['page'])) ? $data['page'] : 1;
         $category =   (isset($data['category'])) ? $data['category'] : null;
         $with =       (isset($data['with'])) ? $data['with'] : [];
@@ -63,7 +63,7 @@ class MealRepository extends ServiceEntityRepository
             $request->getUri() // current url (for links)
         );
 
-        // calculate meal status and remove unnecessary values (slug, deletedAt...)
+        // calculate 'meal status' and remove unnecessary values (slug, deletedAt...)
         $response['data'] = $this->formatData($response['data'], $diff_time);
 
         // and finally get back to controller...
@@ -98,12 +98,12 @@ class MealRepository extends ServiceEntityRepository
         if (empty($tags) || count($tags) == 0) return $query;
 
         for ($i = 0; $i < count($tags); $i++) {
-            $query->innerJoin('meal.tag', 'tags'.$i, Join::WITH, 'tags' .$i. '= :tag' . $i);
+            $query->innerJoin('meal.tags', 'tags'.$i, Join::WITH, 'tags'.$i.' = :tag'.$i);
             $query->setParameter('tag' . $i, $tags[$i]);
         }
 
         // goes wild with translations...
-        // $query->innerJoin('meal.tag', 'tags')
+        // $query->innerJoin('meal.tags', 'tags')
         //       ->andWhere('tags.id in (:tags)')
         //       ->setParameter('tags', $tags)
         //       ->groupBy('meal.id')
@@ -144,14 +144,14 @@ class MealRepository extends ServiceEntityRepository
 
         // tags
         if (in_array(1, $with)) {
-            $query->leftJoin('meal.tag', 'meal_tag')
-                  ->addSelect('meal_tag');
+            $query->leftJoin('meal.tags', 'meal_tags')
+                  ->addSelect('meal_tags');
         }
 
         // ingredients
         if ( in_array(3, $with) ) {
-            $query->leftJoin('meal.ingredient', 'meal_ingredient')
-                  ->addSelect('meal_ingredient');
+            $query->leftJoin('meal.ingredients', 'meal_ingredients')
+                  ->addSelect('meal_ingredients');
         }
 
         return $query;
@@ -219,17 +219,18 @@ class MealRepository extends ServiceEntityRepository
         return [
             'meta' => $meta,
             'data' => $pagination->getItems(),
-            'links' => $links
+            'links' => $links,
         ];
     }
 
     /**
-     * Format Data (serializer, or not?)
+     * Format Data (serializer not working the way I need?)
      */
     private function formatData($results, $diff_time)
     {
         foreach ($results as $key => $result) {
             $status = 'created';
+
             if ($diff_time) {
                 if ($result['deletedAt'] != null) {
                     $status = 'deleted';
@@ -246,9 +247,6 @@ class MealRepository extends ServiceEntityRepository
             // rename 'createdAt' to 'status'
             $keys = array_keys($result);
             $keys[array_search('createdAt', $keys)] = 'status';
-
-            // if(array_key_exists('tag', $result)) $keys[array_search('tag', $keys)] = 'tags';
-            // if(array_key_exists('ingredient', $result)) $keys[array_search('ingredient', $keys)] = 'ingredients';
 
             // combine everything
             $result = array_combine($keys, $result);

@@ -5,7 +5,6 @@ namespace App\Entity;
 use App\Repository\MealRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
-use Doctrine\Common\Collections\Criteria;
 use Doctrine\ORM\Mapping as ORM;
 use Gedmo\Mapping\Annotation as Gedmo;
 use DateTime;
@@ -66,26 +65,27 @@ class Meal
 
     /**
      * @ORM\ManyToMany(targetEntity=Ingredient::class, inversedBy="meal")
-     * @ORM\JoinTable(name="meal_ingredient")
+     * @ORM\JoinTable(name="meal_ingredients")
      */
-    private $ingredient;
+    private $ingredients;
 
     /**
      * @ORM\ManyToMany(targetEntity=Tag::class, inversedBy="meal")
-     * @ORM\JoinTable(name="meal_tag")
+     * @ORM\JoinTable(name="meal_tags")
      */
-    private $tag;
+    private $tags;
 
     /**
      * @Gedmo\Locale
+     * Used locale to override Translation listener`s locale
+     * this is not a mapped field of entity metadata, just a simple property
      */
     private $locale;
 
-
     public function __construct()
     {
-        $this->ingredient = new ArrayCollection();
-        $this->tag = new ArrayCollection();
+        $this->ingredients = new ArrayCollection();
+        $this->tags = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -105,7 +105,7 @@ class Meal
         return $this;
     }
 
-    public function getCategory()
+    public function getCategory(): ?Category
     {
         return $this->category;
     }
@@ -180,15 +180,15 @@ class Meal
     /**
      * @return Collection|Ingredient[]
      */
-    public function getIngredient(): Collection
+    public function getIngredients(): Collection
     {
-        return $this->ingredient;
+        return $this->ingredients;
     }
 
     public function addIngredient(Ingredient $ingredient): self
     {
-        if (!$this->ingredient->contains($ingredient)) {
-            $this->ingredient[] = $ingredient;
+        if (!$this->ingredients->contains($ingredient)) {
+            $this->ingredients[] = $ingredient;
         }
 
         return $this;
@@ -196,9 +196,7 @@ class Meal
 
     public function removeIngredient(Ingredient $ingredient): self
     {
-        if ($this->ingredient->contains($ingredient)) {
-            $this->ingredient->removeElement($ingredient);
-        }
+        $this->ingredients->removeElement($ingredient);
 
         return $this;
     }
@@ -206,15 +204,15 @@ class Meal
     /**
      * @return Collection|Tag[]
      */
-    public function getTag(): Collection
+    public function getTags(): Collection
     {
-        return $this->tag;
+        return $this->tags;
     }
 
     public function addTag(Tag $tag): self
     {
-        if (!$this->tag->contains($tag)) {
-            $this->tag[] = $tag;
+        if (!$this->tags->contains($tag)) {
+            $this->tags[] = $tag;
         }
 
         return $this;
@@ -222,9 +220,7 @@ class Meal
 
     public function removeTag(Tag $tag): self
     {
-        if ($this->tag->contains($tag)) {
-            $this->tag->removeElement($tag);
-        }
+        $this->tags->removeElement($tag);
 
         return $this;
     }

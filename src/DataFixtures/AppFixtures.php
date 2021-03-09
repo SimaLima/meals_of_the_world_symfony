@@ -47,7 +47,7 @@ class AppFixtures extends Fixture
 
     private function loadTags(ObjectManager $manager): void
     {
-        for ($i=1; $i<=10; $i++) {
+        for ($i = 1; $i <= 10; $i++) {
             $tag = new Tag();
             $tag->setTitle('Tag '.$i.' (en)');
             $tag->setSlug('tag-'.$i);
@@ -64,7 +64,7 @@ class AppFixtures extends Fixture
 
     private function loadIngredients(ObjectManager $manager): void
     {
-        for ($i=1; $i <= 10; $i++) {
+        for ($i = 1; $i <= 10; $i++) {
             $ingredient = new Ingredient();
             $ingredient->setTitle('Ingredient '.$i.' (en)');
             $ingredient->setSlug('ingredient-'.$i);
@@ -81,7 +81,7 @@ class AppFixtures extends Fixture
 
     private function loadCategories(ObjectManager $manager): void
     {
-        for ($i=1; $i <= 5; $i++) {
+        for ($i = 1; $i <= 5; $i++) {
             $category = new Category();
             $category->setTitle('Category '.$i.' (en)');
             $category->setSlug('category-'.$i);
@@ -98,14 +98,14 @@ class AppFixtures extends Fixture
 
     private function loadMeals(ObjectManager $manager): void
     {
-        for ($i=1; $i <= 20; $i++) {
+        for ($i = 1; $i <= 20; $i++) {
             $meal = new Meal();
             $meal->setTitle('Meal title '.$i.' (en)');
             $meal->setDescription('This is meal description '.$i.'. (en)');
             $meal->setSlug('meal-'.$i);
 
-            // every 5th meal doesn't have category
-            if ($i%5 != 0) {
+            // meal-category: every 5th meal doesn't have category
+            if ($i % 5 != 0) {
                 $meal->setCategory(
                     $manager->merge(
                         $this->getReference('category-'.mt_rand(1,5))
@@ -114,23 +114,24 @@ class AppFixtures extends Fixture
             }
 
             // timestamps
-            // from 21 till yesterday -> 1 meal/day is created
-            $days = 21-$i;
+            // from 20 till today -> 1 meal/day is created
+            $days = 20-$i;
             $created_at = new \DateTime('now-'.$days.' days');
             $updated_at = $created_at;
             $deleted_at = null;
 
-            // every 5th meal is updated 2 days after creation
-            if ($i%5 == 0) $updated_at = new \DateTime('now-'.($days-2).' days');
-            // every 6th meal is deleted 2 days after creation
-            if ($i%6 == 0) $deleted_at = new \DateTime('now-'.($days-2).' days');
+            // every 6th meal is deleted 1 day after creation
+            if ($i % 6 == 0) $deleted_at = new \DateTime('now-'.($days-1).' days');
+
+            // every 7th meal is updated 1 day after creation
+            if ($i % 7 == 0) $updated_at = new \DateTime('now-'.($days-1).' days');
 
             $meal->setCreatedAt($created_at);
             $meal->setUpdatedAt($updated_at);
             $meal->setDeletedAt($deleted_at);
 
             // meal-tags
-            for ($j=1; $j<=mt_rand(1,10); $j++) {
+            for ($j = 1; $j <= mt_rand(1,10); $j++) {
                 $meal->addTag(
                     $manager->merge(
                         $this->getReference('tag-'.mt_rand(1,10))
@@ -139,7 +140,7 @@ class AppFixtures extends Fixture
             }
 
             // meal-ingredients
-            for ($k=1; $k<=mt_rand(1,10); $k++) {
+            for ($k = 1; $k <= mt_rand(1,10); $k++) {
                 $meal->addIngredient(
                     $manager->merge(
                         $this->getReference('ingredient-'.mt_rand(1,10))
