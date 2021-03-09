@@ -29,6 +29,3 @@ Composer: 2.0.9<br>
 Symfony: 5.2.3<br>
 PHP: 7.4.15<br>
 MySQL: 10.4.11-MariaDB
-
-## Notes:
-Database relationships can be seen in screenshot-database.
