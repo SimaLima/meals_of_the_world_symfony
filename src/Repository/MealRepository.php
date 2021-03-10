@@ -64,7 +64,10 @@ class MealRepository extends ServiceEntityRepository
         );
 
         // calculate 'meal status' and remove unnecessary values (slug, deletedAt...)
-        $response['data'] = $this->formatData($response['data'], $diff_time);
+        $response['data'] = $this->formatData(
+                                $response['data'],
+                                $diff_time
+                            );
 
         // and finally get back to controller...
         return $response;

@@ -7,10 +7,11 @@ Its purpose is to:
 - return JSON response
 
 ## Requirements:
- - <b>PHP 7.4</b> (required by Symfony5)
+ - <b>PHP 7.4</b> (required by Symfony 5)
+ - Composer
  - Symfony CLI (optional)
 
-## Installation (requires composer)
+## Installation
 1. extract git repository
 2. create new database in admin (phpmyadmin) and configure .env
 3. locate to project root folder (meals_of_the_world_v3-main) in command line and run commands:
