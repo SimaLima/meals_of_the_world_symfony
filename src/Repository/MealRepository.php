@@ -158,7 +158,7 @@ class MealRepository extends ServiceEntityRepository
     }
 
     /**
-     * Paginate results
+     * Paginate results (return with meta & links)
      */
     private function paginateResults($query, $page_num, $per_page, $uri)
     {
@@ -224,7 +224,7 @@ class MealRepository extends ServiceEntityRepository
     }
 
     /**
-     * Format Data (serializer not working the way I need?)
+     * Format Data (serializer, or something else?)
      */
     private function formatData($results, $diff_time)
     {

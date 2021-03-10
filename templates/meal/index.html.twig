@@ -6,13 +6,13 @@
         <h1>Response:</h1>
         <div class="response-holder">
             <!-- dump -->
-            <pre>{{ dump(response) }}</pre>
+            <pre>{#{ dump(response) }#}</pre>
 
-            <!-- json encode here in twig -->
-            <pre>{{ response|json_encode(constant('JSON_PRETTY_PRINT')) }}</pre>
+            <!-- json encode here in twig (pretty-print) -->
+            <pre>{#{ response|json_encode(constant('JSON_PRETTY_PRINT')) }#}</pre>
 
-            <!-- echo formatted json_response -->
-            <!-- <pre>{{ json_response }}</pre> -->
+            <!-- echo minified json_response -->
+            <pre>{{ json_response }}</pre>
         </div>
     </section>
     <aside class="secondary-container">

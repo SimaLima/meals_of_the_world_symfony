@@ -1,18 +1,19 @@
 # Meals of the World
 This is multilingual application made with Symfony.<br>
+It uses DoctrineExtensions/Translatable package to handle translations.<br>
 Its purpose is to:
 - validate & process form request
 - filter items(meals) using parameters from submitted form
 - return JSON response
 
 ## Requirements:
- - PHP 7.4 (required by Symfony)
+ - <b>PHP 7.4</b> (required by Symfony5)
  - Symfony CLI (optional)
 
 ## Installation (requires composer)
 1. extract git repository
 2. create new database in admin (phpmyadmin) and configure .env
-3. locate to project root folder (meals_of_the_world_v3) in command line and run commands:
+3. locate to project root folder (meals_of_the_world_v3-main) in command line and run commands:
 ```sh
 composer install
 php bin/console doctrine:migrations:migrate
@@ -22,7 +23,7 @@ Start server:
 ```sh
 symfony server:start (or some other server command...)
 ```
-Open in browser: http://127.0.0.1:8000
+And lastly open in browser Local Web Address.
 
 ## Versions:
 Composer: 2.0.9<br>
